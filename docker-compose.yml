@@ -1,0 +1,19 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: family_budget
+      POSTGRES_PASSWORD: family_budget_password
+      POSTGRES_DB: family_budget
+    ports: ["5432:5432"]
+    volumes: ["postgres_data:/var/lib/postgresql/data"]
+  app:
+    build: .
+    depends_on: [db]
+    environment:
+      DATABASE_URL: postgresql://family_budget:family_budget_password@db:5432/family_budget?schema=public
+      AUTH_URL: http://localhost:3000
+      AUTH_SECRET: replace-with-openssl-rand-base64-32
+    ports: ["3000:3000"]
+volumes:
+  postgres_data:

@@ -1,0 +1,4 @@
+use client';
+import { useTransition } from 'react';
+import { updateBudgetEntry } from '@/app/actions';
+export function AmountCell({ budgetYearId, categoryId, month, value }: { budgetYearId:string; categoryId:string; month:number; value:number }) { const [pending,startTransition]=useTransition(); return <form action={(fd)=>startTransition(async()=>updateBudgetEntry(fd))} className="relative"><input type="hidden" name="budgetYearId" value={budgetYearId}/><input type="hidden" name="categoryId" value={categoryId}/><input type="hidden" name="month" value={month}/><input name="amount" type="number" step="1000" defaultValue={value || ''} onBlur={(e)=>e.currentTarget.form?.requestSubmit()} className="table-input w-24 rounded-md border border-transparent bg-transparent px-2 py-1 text-right text-sm hover:border-slate-300 focus:border-slate-500 focus:bg-white" />{pending?<span className="absolute -right-1 top-1 h-2 w-2 rounded-full bg-amber-500"/>:null}</form> }
