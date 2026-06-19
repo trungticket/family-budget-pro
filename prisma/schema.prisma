@@ -1,149 +1,191 @@
-generator client { provider = "prisma-client-js" }
+generator client {
+  provider = "prisma-client-js"
+}
 
-datasource db { provider = "postgresql" url = env("DATABASE_URL") }
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
 
-enum HouseholdRole { OWNER ADMIN EDITOR VIEWER }
-enum GroupType { INCOME EXPENSE SAVINGS }
-enum TransactionType { ACTUAL_INCOME ACTUAL_EXPENSE TRANSFER_TO_SAVINGS TRANSFER_FROM_SAVINGS SAVINGS_ADJUSTMENT }
+enum HouseholdRole {
+  OWNER
+  ADMIN
+  EDITOR
+  VIEWER
+}
+
+enum GroupType {
+  INCOME
+  EXPENSE
+  SAVINGS
+}
+
+enum TransactionType {
+  ACTUAL_INCOME
+  ACTUAL_EXPENSE
+  TRANSFER_TO_SAVINGS
+  TRANSFER_FROM_SAVINGS
+  SAVINGS_ADJUSTMENT
+}
 
 model User {
-  id String @id @default(cuid())
-  name String?
-  email String @unique
-  emailVerified DateTime?
-  image String?
-  passwordHash String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  accounts Account[]
-  sessions Session[]
-  memberships HouseholdMember[]
-  createdTransactions Transaction[] @relation("TransactionCreatedBy")
+  id                  String            @id @default(cuid())
+  name                String?
+  email               String            @unique
+  emailVerified       DateTime?
+  image               String?
+  passwordHash        String?
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
+  accounts            Account[]
+  sessions            Session[]
+  memberships         HouseholdMember[]
+  createdTransactions Transaction[]     @relation("TransactionCreatedBy")
 }
+
 model Account {
-  id String @id @default(cuid())
-  userId String
-  type String
-  provider String
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
   providerAccountId String
-  refresh_token String?
-  access_token String?
-  expires_at Int?
-  token_type String?
-  scope String?
-  id_token String?
-  session_state String?
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   @@unique([provider, providerAccountId])
 }
+
 model Session {
-  id String @id @default(cuid())
-  sessionToken String @unique
-  userId String
-  expires DateTime
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
+
 model VerificationToken {
   identifier String
-  token String @unique
-  expires DateTime
+  token      String   @unique
+  expires    DateTime
+
   @@unique([identifier, token])
 }
+
 model Household {
-  id String @id @default(cuid())
-  name String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  members HouseholdMember[]
+  id          String            @id @default(cuid())
+  name        String
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  members     HouseholdMember[]
   budgetYears BudgetYear[]
 }
+
 model HouseholdMember {
-  id String @id @default(cuid())
+  id          String        @id @default(cuid())
   householdId String
-  userId String
-  role HouseholdRole @default(EDITOR)
-  createdAt DateTime @default(now())
-  household Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId      String
+  role        HouseholdRole @default(EDITOR)
+  createdAt   DateTime      @default(now())
+  household   Household     @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   @@unique([householdId, userId])
   @@index([userId])
 }
+
 model BudgetYear {
-  id String @id @default(cuid())
-  householdId String
-  year Int
-  currency String @default("VND")
-  beginningSpendingBalance Decimal @default(0) @db.Decimal(18, 2)
-  beginningSavingsBalance Decimal @default(0) @db.Decimal(18, 2)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  household Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
-  groups CategoryGroup[]
-  entries BudgetEntry[]
-  transactions Transaction[]
+  id                       String          @id @default(cuid())
+  householdId              String
+  year                     Int
+  currency                 String          @default("VND")
+  beginningSpendingBalance Decimal         @default(0) @db.Decimal(18, 2)
+  beginningSavingsBalance  Decimal         @default(0) @db.Decimal(18, 2)
+  createdAt                DateTime        @default(now())
+  updatedAt                DateTime        @updatedAt
+  household                Household       @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  groups                   CategoryGroup[]
+  entries                  BudgetEntry[]
+  transactions             Transaction[]
+
   @@unique([householdId, year])
 }
+
 model CategoryGroup {
-  id String @id @default(cuid())
+  id           String     @id @default(cuid())
   budgetYearId String
-  name String
-  type GroupType
-  sortOrder Int @default(0)
-  archived Boolean @default(false)
-  budgetYear BudgetYear @relation(fields: [budgetYearId], references: [id], onDelete: Cascade)
-  categories Category[]
+  name         String
+  type         GroupType
+  sortOrder    Int        @default(0)
+  archived     Boolean    @default(false)
+  budgetYear   BudgetYear @relation(fields: [budgetYearId], references: [id], onDelete: Cascade)
+  categories   Category[]
+
   @@index([budgetYearId, sortOrder])
 }
+
 model Category {
-  id String @id @default(cuid())
+  id              String        @id @default(cuid())
   categoryGroupId String
-  name String
-  sortOrder Int @default(0)
-  isSystem Boolean @default(false)
-  archived Boolean @default(false)
-  group CategoryGroup @relation(fields: [categoryGroupId], references: [id], onDelete: Cascade)
-  entries BudgetEntry[]
-  transactions Transaction[]
+  name            String
+  sortOrder       Int           @default(0)
+  isSystem        Boolean       @default(false)
+  archived        Boolean       @default(false)
+  group           CategoryGroup @relation(fields: [categoryGroupId], references: [id], onDelete: Cascade)
+  entries         BudgetEntry[]
+  transactions    Transaction[]
+
   @@index([categoryGroupId, sortOrder])
 }
+
 model BudgetEntry {
-  id String @id @default(cuid())
+  id           String     @id @default(cuid())
   budgetYearId String
-  categoryId String
-  month Int
-  amount Decimal @default(0) @db.Decimal(18, 2)
-  note String?
-  updatedAt DateTime @updatedAt
-  budgetYear BudgetYear @relation(fields: [budgetYearId], references: [id], onDelete: Cascade)
-  category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  categoryId   String
+  month        Int
+  amount       Decimal    @default(0) @db.Decimal(18, 2)
+  note         String?
+  updatedAt    DateTime   @updatedAt
+  budgetYear   BudgetYear @relation(fields: [budgetYearId], references: [id], onDelete: Cascade)
+  category     Category   @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
   @@unique([budgetYearId, categoryId, month])
   @@index([budgetYearId, month])
 }
+
 model Transaction {
-  id String @id @default(cuid())
+  id           String          @id @default(cuid())
   budgetYearId String
-  categoryId String?
-  type TransactionType
-  date DateTime
-  month Int
-  amount Decimal @db.Decimal(18, 2)
-  description String
-  vendor String?
-  note String?
-  createdById String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  budgetYear BudgetYear @relation(fields: [budgetYearId], references: [id], onDelete: Cascade)
-  category Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
-  createdBy User? @relation("TransactionCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  categoryId   String?
+  type         TransactionType
+  date         DateTime
+  month        Int
+  amount       Decimal         @db.Decimal(18, 2)
+  description  String
+  vendor       String?
+  note         String?
+  createdById  String?
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+  budgetYear   BudgetYear      @relation(fields: [budgetYearId], references: [id], onDelete: Cascade)
+  category     Category?       @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  createdBy    User?           @relation("TransactionCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+
   @@index([budgetYearId, month])
 }
+
 model AuditLog {
-  id String @id @default(cuid())
+  id          String   @id @default(cuid())
   actorUserId String?
-  entityType String
-  entityId String
-  action String
-  payload Json?
-  createdAt DateTime @default(now())
+  entityType  String
+  entityId    String
+  action      String
+  payload     Json?
+  createdAt   DateTime @default(now())
 }
